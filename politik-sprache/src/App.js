@@ -4,6 +4,7 @@ import './App.css';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
 } from 'recharts';
+import Select from 'react-select';
 
 var wordtype = {}
 
@@ -25,10 +26,15 @@ const colors = [
 class App extends Component {
   constructor() {
     super()
-    this.state = {}
+    this.state = { "party": "CDU/CSU" }
   }
   componentDidMount() {
-    fetch("/wordtype_perc.json")
+    this.fetch_for_graph("/wordtype_perc.json", "wordtype")
+    this.fetch_for_graph("/vad.json", "vad")
+  }
+
+  fetch_for_graph(url, varname) {
+    fetch(url)
       .then(res => res.json())
       .then(res => {
         const result = {}
@@ -41,47 +47,66 @@ class App extends Component {
         }
 
         console.log(result)
-        this.setState({ "wordtype": result })
+        this.setState({ [varname]: result })
       })
-
   }
-  render() {
-    if (this.state.wordtype) {
-      console.log(this.state.wordtype)
-
+  handle_party_change(party) {
+    this.setState(({ "party": party.value }));
+  }
+  plotter(varname) {
+    if (this.state[varname]) {
+      console.log(this.state[varname][this.state.party])
       return (
-        <div className="App" >
-          <LineChart
-            width={1500}
-            height={300}
-            data={this.state.wordtype["CDU/CSU"]}
-          >
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="year" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            {
-              Object.keys(this.state.wordtype["CDU/CSU"][0]).map((value, index) => {
-                console.log(value)
-                if (value !== "year") {
-                  return <Line type="monotone" dataKey={value} stroke={colors[index]} activeDot={{ r: 8 }} />
 
-                } else {
-                  return
-                }
-              })
-            }
+        <LineChart
+          width={1000}
+          height={500}
+          data={this.state[varname][this.state.party]}
+        >
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="year" />
+          <YAxis />
+          <Tooltip />
+          <Legend />
+          {
+            Object.keys(this.state[varname][this.state.party][0]).map((value, index) => {
+              console.log(value)
+              if (value !== "year") {
+                return <Line type="monotone" dataKey={value} stroke={colors[index]} activeDot={{ r: 8 }} />
 
-          </LineChart>
-        </div>
-      );
+              } else {
+                return
+              }
+            })
+          }
+
+        </LineChart>)
+
     } else {
       return null
     }
+  }
+  render() {
 
+    console.log(this.state.wordtype)
+
+    return (
+      <div className="App" >
+        <h1>Sprachpolitik</h1>
+        <Select
+          className="select"
+          classNamePrefix="select"
+          value={{ label: this.state.party, value: this.state.party }}
+          onChange={this.handle_party_change.bind(this)}
+          options={[{ label: "CDU/CSU", value: "CDU/CSU" }, { label: "SPD", value: "SPD" }, { label: "GRÜNE", value: "GRÜNE" }, { label: "AfD", value: "AfD" }, { label: "DIE LINKE", value: "DIE LINKE" }, { label: "NPD", value: "NPD" }]}
+        />
+        {this.plotter("vad")}
+      </div>
+    );
   }
 
 }
+
+
 
 export default App;
