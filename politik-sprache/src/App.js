@@ -1,9 +1,8 @@
 import React, { Component } from 'react';
 import logo from './logo.svg';
 import './App.css';
-import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
-} from 'recharts';
+import { LineChart } from "react-chartkick";
+import 'chart.js'
 import Select from 'react-select';
 
 var wordtype = {}
@@ -26,6 +25,7 @@ const colors = [
 class App extends Component {
   constructor() {
     super()
+    this.charts = []
     this.state = { "party": "CDU/CSU" }
   }
   componentDidMount() {
@@ -40,56 +40,56 @@ class App extends Component {
         const result = {}
         for (const party in res) {
           result[party] = []
+          var data = {}
+
           for (const year in res[party]) {
-            result[party].push({ year, ...res[party][year] })
+            let i = 0;
+            for (const wordtype in res[party][year]) {
 
+
+              if (!(i in result[party])) {
+                result[party][i] = {}
+              }
+              if (!("data" in result[party][i])) {
+                result[party][i]["data"] = {}
+              }
+              if (!(year in result[party][i]["data"])) {
+                result[party][i]["data"][year] = {}
+              }
+              // data[wordtype][year] = (res[party][year][wordtype]);
+              result[party][i]["name"] = wordtype;
+              result[party][i]["data"][year] = res[party][year][wordtype]
+              i++;
+
+            }
+
+            console.log(result)
           }
-        }
 
-        console.log(result)
+        }
+        // console.log(result)
         this.setState({ [varname]: result })
       })
   }
   handle_party_change(party) {
     this.setState(({ "party": party.value }));
+    this.forceUpdate();
+    for (const chart of this.charts) {
+      chart.forceUpdate();
+    }
   }
   plotter(varname) {
+
     if (this.state[varname]) {
-      console.log(this.state[varname][this.state.party])
       return (
-
-        <LineChart
-          width={1000}
-          height={500}
-          data={this.state[varname][this.state.party]}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="year" />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-          {
-            Object.keys(this.state[varname][this.state.party][0]).map((value, index) => {
-              console.log(value)
-              if (value !== "year") {
-                return <Line type="monotone" dataKey={value} stroke={colors[index]} activeDot={{ r: 8 }} />
-
-              } else {
-                return
-              }
-            })
-          }
-
-        </LineChart>)
+        <LineChart data={this.state[varname][this.state.party]} curve={false} />
+      )
 
     } else {
       return null
     }
   }
   render() {
-
-    console.log(this.state.wordtype)
-
     return (
       <div className="App" >
         <h1>Sprachpolitik</h1>
@@ -101,6 +101,7 @@ class App extends Component {
           options={[{ label: "CDU/CSU", value: "CDU/CSU" }, { label: "SPD", value: "SPD" }, { label: "GRÜNE", value: "GRÜNE" }, { label: "AfD", value: "AfD" }, { label: "DIE LINKE", value: "DIE LINKE" }, { label: "NPD", value: "NPD" }]}
         />
         {this.plotter("vad")}
+        {this.plotter("wordtype")}
       </div>
     );
   }
